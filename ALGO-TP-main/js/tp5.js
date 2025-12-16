@@ -414,7 +414,7 @@ document.getElementById('tp5-start-btn').addEventListener('click', async () => {
     }
 });
 
-// Render the Bellman-Ford table in HTML (Complete and Finalized)
+// Render the Bellman-Ford table in HTML 
 function renderBellmanTable(history) {
     // --- 1. Setup and Filtering ---
     const container = document.getElementById('bf-table-container');
@@ -429,11 +429,21 @@ function renderBellmanTable(history) {
 
     // Filter history to get only the end-of-pass states (k=0, k=1, k=2, ...)
     const stepsByPass = {};
+    let lastUpdatingPassK = 0; // Track the highest K that actually had an update
+
     history.forEach(item => {
         if (item.step === "Init") {
             stepsByPass[0] = item.dist;
         } else if (typeof item.step === 'number') {
             stepsByPass[item.step] = item.dist;
+            // The item from the Bellman-Ford function should ideally include an 'updated' flag.
+            // Since the final state where the algorithm breaks due to no updates is the one we want to skip,
+            // we'll keep track of the pass number. We assume the pass *before* the last logged one 
+            // is the one where the last updates happened (in case of an early break).
+
+            // NOTE: If the history includes a flag like `item.updated === true`, this logic would be simpler.
+            // Assuming your Bellman-Ford breaks early, the last item in `stepsByPass` is the final state.
+            lastUpdatingPassK = item.step;
         }
     });
 
@@ -446,7 +456,6 @@ function renderBellmanTable(history) {
 
     // --- 2. Create Table Header ---
     let header = '<tr><th>k</th>';
-    // Use lowercase letters (a, b, c, ...) for the table header notation λ^k(a)
     for (let i = 0; i < n; i++) {
         const label = String.fromCharCode(97 + i);
         header += `<th>&lambda;<sup>k</sup>(${label})</th>`;
@@ -461,6 +470,17 @@ function renderBellmanTable(history) {
     for (let i = 0; i < passKeys.length; i++) {
         const k = passKeys[i];
         const currentDistances = stepsByPass[k];
+
+        // --- Skip the final (empty) pass if it was logged and we're ready for the 'fin' row ---
+        // We only want to display the final result in the (fin) row.
+        if (k === maxK && k !== 0) {
+            // If k is the final logged pass, we will only show the k(fin) row below, so we skip the regular k row here.
+            // This assumes the row for k=3 in your image was the final pass state (which was blank).
+            // Since we're removing the blank row, we stop the loop here and move to the 'fin' printout.
+            break;
+        }
+        // --------------------------------------------------------------------------------------
+
 
         let rowLabel = k === 0 ? `0 (init)` : `${k}`;
         let tr = `<tr><td>${rowLabel}</td>`;
@@ -478,14 +498,11 @@ function renderBellmanTable(history) {
                 const prevD = previousDistances[index];
 
                 if (d === Infinity) {
-                    cellContent = ''; // Leave blank for Infinity
+                    cellContent = '';
                 } else if (d === prevD) {
-                    cellContent = ''; // Leave blank if unchanged
+                    cellContent = '';
                 } else if (d < prevD) {
                     cellContent = `${d} (*)`; // New, better distance found
-                } else {
-                    // If d > prevD (should not happen if Bellman-Ford is coded correctly),
-                    // or if d is finite but equal to prevD, it's left blank.
                 }
             }
             tr += `<td>${cellContent}</td>`;
@@ -494,19 +511,16 @@ function renderBellmanTable(history) {
         bodyHTML += tr;
 
         previousDistances = [...currentDistances]; // Update previous distances
-
-        // --- Custom Final Row Tweak ---
-        // After the last calculated pass, we print the k (fin) row with final values.
-        if (i === passKeys.length - 1) {
-            let finTr = `<tr><td>${maxK} (fin)</td>`;
-            finalDistances.forEach((d) => {
-                // Print ALL final values (0, 3, 9, 11, 5) without the asterisk or blanking
-                finTr += `<td>${d === Infinity ? '∞' : d}</td>`;
-            });
-            finTr += '</tr>';
-            bodyHTML += finTr;
-        }
     }
+
+    // --- Print the k (fin) row with final values outside the loop ---
+    let finTr = `<tr><td>${maxK} (fin)</td>`;
+    finalDistances.forEach((d) => {
+        // Print ALL final values without the asterisk or blanking
+        finTr += `<td>${d === Infinity ? '∞' : d}</td>`;
+    });
+    finTr += '</tr>';
+    bodyHTML += finTr;
 
     tbody.innerHTML = bodyHTML;
 }

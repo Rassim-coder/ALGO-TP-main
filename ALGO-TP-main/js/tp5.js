@@ -277,6 +277,42 @@ async function rlfAlgorithm(matrix) {
     return { vertexColors, chromaticNumber: colorClass };
 }
 
+// Visualize coloring a set of vertices
+async function visualizeColorClass(vertices, colorClass, color) {
+    updateInfo(`Coloring class ${colorClass + 1} with vertices: ${vertices.join(', ')}`);
+
+    for (let v of vertices) {
+        nodes.update({
+            id: v,
+            color: { background: color, border: '#1e293b' }
+        });
+        await sleep(500);
+    }
+    await sleep(300);
+}
+
+// Display color legend
+function displayColorLegend(assignments, colors) {
+    const legend = document.getElementById('color-legend');
+    if (!legend) return; // Element doesn't exist, skip legend display
+    
+    const legendItems = document.getElementById('legend-items');
+    if (!legendItems) return; // Element doesn't exist, skip legend display
+    
+    legendItems.innerHTML = '';
+
+    assignments.forEach(assignment => {
+        const item = document.createElement('div');
+        item.className = 'color-item';
+        item.innerHTML = `
+            <div class="color-box" style="background-color: ${colors[assignment.color % colors.length]}"></div>
+            <span>Class ${assignment.color + 1}: Vertices ${assignment.vertices.join(', ')}</span>
+        `;
+        legendItems.appendChild(item);
+    });
+
+    legend.style.display = 'block';
+}
 
 // Update info text
 function updateInfo(text) {
@@ -535,6 +571,9 @@ document.getElementById('tp5-reset-btn').addEventListener('click', () => {
     document.getElementById('color-legend').style.display = 'none';
     document.getElementById('bf-table-container').style.display = 'none';
     updateInfo('Algorithm visualizer ready. Choose an algorithm and enter a matrix.');
+    const legend = document.getElementById('color-legend');
+    if (legend) legend.style.display = 'none';
+    updateInfo('Enter an adjacency matrix and click "Visualize RLF" to see the algorithm in action.');
 });
 
 // Initialize on load
@@ -546,9 +585,11 @@ const bellmanMatrix = document.getElementById('bellmand-ford-matrix');
 const rlfMatrix = document.querySelector('.rlf-matrix');
 const bellmandInfoBox = document.querySelector('#bellmand-info-box');
 const rlfInfoBox = document.querySelector('#rlf-info-box');
+const bfOptions = document.getElementById('bf-options');
 
 // Initial display setup based on the default selected algorithm
 algoSelect.addEventListener('change', () => {
+    const bfTableContainer = document.getElementById('bf-table-container');
     if (algoSelect.value === 'bellman') {
         startBtn.textContent = 'Visualiser Bellman-Ford';
         bellmanMatrix.style.display = 'block';
@@ -565,5 +606,20 @@ algoSelect.addEventListener('change', () => {
         rlfInfoBox.style.display = 'block';
         document.getElementById('color-legend').style.display = 'none';
         document.getElementById('bf-table-container').style.display = 'none';
+        if (bellmanMatrix) bellmanMatrix.style.display = 'block';
+        if (rlfMatrix) rlfMatrix.style.display = 'none';
+        if (bellmandInfoBox) bellmandInfoBox.style.display = 'block';
+        if (rlfInfoBox) rlfInfoBox.style.display = 'none';
+        if (bfTableContainer) bfTableContainer.style.display = 'block';
+        if (bfOptions) bfOptions.style.display = 'block';
+
+    } else {
+        startBtn.textContent = 'Visualiser RLF';
+        if (bellmanMatrix) bellmanMatrix.style.display = 'none';
+        if (rlfMatrix) rlfMatrix.style.display = 'block';
+        if (bellmandInfoBox) bellmandInfoBox.style.display = 'none';
+        if (rlfInfoBox) rlfInfoBox.style.display = 'block';
+        if (bfTableContainer) bfTableContainer.style.display = 'none';
+        if (bfOptions) bfOptions.style.display = 'none';
     }
 });

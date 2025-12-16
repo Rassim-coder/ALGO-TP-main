@@ -2,6 +2,14 @@ let network = null;
 let nodes, edges;
 const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
+// Helper to convert indices (0, 1, 2) to labels (A, B, C)
+function indexToLabel(index) {
+    if (typeof index === 'number' && index >= 0) {
+        return String.fromCharCode(65 + index);
+    }
+    return String(index);
+}
+
 // Initialize empty network
 function initNetwork() {
     const container = document.getElementById('tp5-network');
@@ -33,65 +41,64 @@ function initNetwork() {
     network = new vis.Network(container, data, options);
 }
 
-// Parse adjacency matrix
+// Parse adjacency matrix (for RLF, 0/1)
 function parseMatrix(input) {
     const rows = input.trim().split('\n').filter(r => r.trim());
     const matrix = rows.map(row =>
         row.split(',').map(val => parseInt(val.trim()))
     );
 
-    if (matrix.length === 0) throw new Error('Empty matrix');
+    if (matrix.length === 0) throw new Error('Empty RLF matrix');
     const n = matrix.length;
     if (!matrix.every(row => row.length === n)) {
-        throw new Error('Matrix must be square');
+        throw new Error('RLF Matrix must be square');
     }
 
     return matrix;
 }
 
-//parse bellmand-ford matrix 
+// Parse bellmand-ford matrix (weighted)
 function parseWeightedMatrix(bellmanMatrix) {
     const rows = bellmanMatrix.trim().split('\n').filter(r => r.trim());
 
     const bellmatrix = rows.map(row =>
         row
             .trim()
-            .split(/[\s,]+/)     // space OR comma
+            .split(/[\s,]+/)    // space OR comma
             .map(val => {
                 const num = Number(val);
                 if (isNaN(num)) {
-                    throw new Error("Invalid number in matrix");
+                    throw new Error("Invalid number in Bellman-Ford matrix");
                 }
                 return num;
             })
     );
 
-    if (bellmatrix.length === 0) {  // ✅ CORRECT - check parsed matrix
-        throw new Error("Empty matrix");
+    if (bellmatrix.length === 0) {
+        throw new Error("Empty Bellman-Ford matrix");
     }
 
     const n = bellmatrix.length;
     if (!bellmatrix.every(row => row.length === n)) {
-        throw new Error("Matrix must be square");
+        throw new Error("Bellman-Ford Matrix must be square");
     }
 
     return bellmatrix;
 }
 
-//create bellmand graph from matrix
-// create bellmand graph from matrix
+// Create directed graph from weighted matrix (Bellman-Ford)
 function createDirectedGraphFromWeightedMatrix(bellmatrix) {
     const n = bellmatrix.length;
     nodes.clear();
     edges.clear();
 
     for (let i = 0; i < n; i++) {
-        // Get the uppercase letter label (0 -> A, 1 -> B, ...)
-        const label = String.fromCharCode(65 + i);
+        // Use the consistent letter label (A, B, C, ...)
+        const label = indexToLabel(i);
 
         nodes.add({
             id: i,
-            label: label, // Changed from `${i}` to the letter
+            label: label,
             color: { background: '#94a3b8', border: '#64748b' }
         });
     }
@@ -111,29 +118,30 @@ function createDirectedGraphFromWeightedMatrix(bellmatrix) {
 }
 
 
-
-// Create graph from matrix
+// Create graph from matrix (Used for RLF - Undirected)
 function createGraphFromMatrix(matrix) {
     const n = matrix.length;
     nodes.clear();
     edges.clear();
 
     for (let i = 0; i < n; i++) {
+        // Use the consistent letter label (A, B, C, ...)
+        const label = indexToLabel(i);
         nodes.add({
             id: i,
-            label: `${i}`,
+            label: label,
             color: { background: '#94a3b8', border: '#64748b' }
         });
     }
 
     for (let i = 0; i < n; i++) {
-        for (let j = 0; j < n; j++) {
-            if (matrix[i][j] !== 0) {  // Changed from bellmanMatrix
+        for (let j = i + 1; j < n; j++) { // Only check half the matrix (j > i) for undirected edges
+            if (matrix[i][j] === 1) {
                 edges.add({
                     from: i,
                     to: j,
-                    label: String(matrix[i][j]),  // Changed from bellmanMatrix
-                    arrows: 'to'
+                    arrows: undefined, // Undirected edges
+                    value: 1
                 });
             }
         }
@@ -149,10 +157,45 @@ function getDegree(vertex, matrix, availableVertices) {
     return degree;
 }
 
+// Visualize coloring a set of vertices (RLF visualization)
+async function visualizeColorClass(vertices, colorClass, color) {
+    const vertexLabels = vertices.map(indexToLabel);
+    updateInfo(`Coloring class ${colorClass + 1} with vertices: ${vertexLabels.join(', ')}`);
+
+    for (let v of vertices) {
+        nodes.update({
+            id: v,
+            color: { background: color, border: '#1e293b' }
+        });
+        await sleep(500);
+    }
+    await sleep(300);
+}
+
+// Display color legend (RLF results)
+function displayColorLegend(assignments, colors) {
+    const legend = document.getElementById('color-legend');
+    const legendItems = document.getElementById('legend-items');
+    legendItems.innerHTML = '';
+
+    assignments.forEach(assignment => {
+        const vertexLabels = assignment.vertices.map(indexToLabel);
+
+        const item = document.createElement('div');
+        item.className = 'color-item';
+        item.innerHTML = `
+            <div class="color-box" style="background-color: ${colors[assignment.color % colors.length]}"></div>
+            <span>Class ${assignment.color + 1}: Vertices ${vertexLabels.join(', ')}</span>
+        `;
+        legendItems.appendChild(item);
+    });
+
+    legend.style.display = 'block';
+}
+
 // RLF Algorithm with visualization
 async function rlfAlgorithm(matrix) {
     const n = matrix.length;
-    const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
     const vertexColors = new Array(n).fill(-1);
     let uncoloredVertices = new Set([...Array(n).keys()]);
     let colorClass = 0;
@@ -234,38 +277,6 @@ async function rlfAlgorithm(matrix) {
     return { vertexColors, chromaticNumber: colorClass };
 }
 
-// Visualize coloring a set of vertices
-async function visualizeColorClass(vertices, colorClass, color) {
-    updateInfo(`Coloring class ${colorClass + 1} with vertices: ${vertices.join(', ')}`);
-
-    for (let v of vertices) {
-        nodes.update({
-            id: v,
-            color: { background: color, border: '#1e293b' }
-        });
-        await sleep(500);
-    }
-    await sleep(300);
-}
-
-// Display color legend
-function displayColorLegend(assignments, colors) {
-    const legend = document.getElementById('color-legend');
-    const legendItems = document.getElementById('legend-items');
-    legendItems.innerHTML = '';
-
-    assignments.forEach(assignment => {
-        const item = document.createElement('div');
-        item.className = 'color-item';
-        item.innerHTML = `
-            <div class="color-box" style="background-color: ${colors[assignment.color % colors.length]}"></div>
-            <span>Class ${assignment.color + 1}: Vertices ${assignment.vertices.join(', ')}</span>
-        `;
-        legendItems.appendChild(item);
-    });
-
-    legend.style.display = 'block';
-}
 
 // Update info text
 function updateInfo(text) {
@@ -276,22 +287,18 @@ function updateInfo(text) {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-//bellmand-ford function 
-//bellmand-ford function 
+
+// Bellman-Ford algorithm
 function bellmanFord(bellmatrix, source) {
     const n = bellmatrix.length;
-    // dist: Array to store the shortest distance from source to each node
     let dist = Array(n).fill(Infinity);
-    // pred: Array to store the predecessor of each node (for path reconstruction)
     let pred = Array(n).fill(null);
     dist[source] = 0;
 
     let history = [];
 
-    // Log Initial state (k=0)
-    history.push({ step: "Init", dist: [...dist], pred: [...pred] });
+    history.push({ step: "Init", dist: [...dist], pred: [...pred], updated: true }); // added updated: true for init
 
-    // Build edge list: { from, to, weight }
     const edges = [];
     for (let i = 0; i < n; i++) {
         for (let j = 0; j < n; j++) {
@@ -301,34 +308,34 @@ function bellmanFord(bellmatrix, source) {
         }
     }
 
+    let lastUpdatingPass = 0;
     // --- Core Bellman-Ford: Relax edges |V|-1 times ---
     for (let k = 1; k <= n - 1; k++) {
         let updatedInPass = false;
-        let tempDist = [...dist]; // Use a temporary array to calculate the state for this pass
+        let tempDist = [...dist];
 
-        // Process each edge
         for (let edge of edges) {
             const { from, to, weight } = edge;
-            // Relaxation step
             if (dist[from] !== Infinity && dist[from] + weight < tempDist[to]) {
-                tempDist[to] = dist[from] + weight; // Update the temp distance
-                pred[to] = from; // Update predecessor
+                tempDist[to] = dist[from] + weight;
+                pred[to] = from;
                 updatedInPass = true;
             }
         }
 
-        // Update the master distance array only at the end of the pass
         dist = tempDist;
 
-        // Log the state at the end of pass k (This is the crucial step for the table)
+        if (updatedInPass) {
+            lastUpdatingPass = k;
+        }
+
         history.push({
             step: k,
             dist: [...dist],
             pred: [...pred],
-            updated: updatedInPass // Note if any change occurred in this pass
+            updated: updatedInPass
         });
 
-        // Optimization: If no distances were updated in this pass, all shortest paths are found.
         if (!updatedInPass) {
             break;
         }
@@ -340,12 +347,12 @@ function bellmanFord(bellmatrix, source) {
         const { from, to, weight } = edge;
         if (dist[from] !== Infinity && dist[from] + weight < dist[to]) {
             negativeCycleDetected = true;
-            // The step "n" (or V) will mark the state where the cycle was found
             history.push({
-                step: n,
+                step: n, // Log the state after the Vth check (usually n or last pass + 1)
                 dist: [...dist],
                 pred: [...pred],
-                message: "Negative cycle detected in final check."
+                message: "Negative cycle detected in final check.",
+                updated: false // No update to the array, just detection
             });
             break;
         }
@@ -353,68 +360,33 @@ function bellmanFord(bellmatrix, source) {
 
     return {
         history,
-        negativeCycleDetected
+        negativeCycleDetected,
+        lastUpdatingPass: negativeCycleDetected ? n : lastUpdatingPass
     };
 }
-// Color nodes by distance
+
+// Color nodes by distance (Bellman-Ford visualization)
 function colorByDistance(distances) {
+    // We use the global 'colors' array which is available.
     distances.forEach((d, i) => {
         let color = '#94a3b8'; // default gray
 
         if (d !== Infinity) {
-            color = colors[d % colors.length];
+            // Use modulo operator on the distance value
+            color = colors[Math.abs(d) % colors.length];
         }
 
         nodes.update({
             id: i,
-            color: { background: color, border: '#1e293b' }
+            color: { background: color, border: '#1e293b' },
+            // Optional: Update label to show distance
+            label: `${indexToLabel(i)} (${d === Infinity ? '∞' : d})`
         });
     });
 }
 
 
-// Start button handler
-// Start button handler (The update needs to happen here)
-document.getElementById('tp5-start-btn').addEventListener('click', async () => {
-    try {
-        const bellmanmatrixValue = document.getElementById('bellmand-ford-matrix').value;
-        const input = document.getElementById('tp5-array-input').value;
-        const algo = document.getElementById('tp5-algo-select').value;
-
-        // ... (RLF logic is unchanged)
-
-        if (algo === 'bellman') {
-            const bellmatrix = parseWeightedMatrix(bellmanmatrixValue); // Use weighted parser
-            createDirectedGraphFromWeightedMatrix(bellmatrix); // Create directed graph
-            await sleep(1000);
-
-            const source = parseInt(document.getElementById('bf-source').value);
-            updateInfo(`Running Bellman-Ford from source ${source}...`);
-
-            // --- Capture the new return object ---
-            const result = bellmanFord(bellmatrix, source);
-            const history = result.history;
-            const finalDistances = history[history.length - 1].dist;
-            // -------------------------------------
-
-            if (result.negativeCycleDetected) {
-                updateInfo(`⚠️ **Negative Cycle Detected!** Shortest paths are undefined.`);
-                // You might want to color the nodes by distance, but the distances are not true shortest paths.
-                colorByDistance(finalDistances);
-            } else {
-                updateInfo(`Algorithm complete! Shortest paths from node ${source} calculated.`);
-                colorByDistance(finalDistances);
-            }
-
-            renderBellmanTable(history);
-        }
-
-    } catch (error) {
-        alert('Error: ' + error.message);
-    }
-});
-
-// Render the Bellman-Ford table in HTML 
+// Render the Bellman-Ford table in HTML (Finalized to match image)
 function renderBellmanTable(history) {
     // --- 1. Setup and Filtering ---
     const container = document.getElementById('bf-table-container');
@@ -429,21 +401,11 @@ function renderBellmanTable(history) {
 
     // Filter history to get only the end-of-pass states (k=0, k=1, k=2, ...)
     const stepsByPass = {};
-    let lastUpdatingPassK = 0; // Track the highest K that actually had an update
-
     history.forEach(item => {
         if (item.step === "Init") {
             stepsByPass[0] = item.dist;
         } else if (typeof item.step === 'number') {
             stepsByPass[item.step] = item.dist;
-            // The item from the Bellman-Ford function should ideally include an 'updated' flag.
-            // Since the final state where the algorithm breaks due to no updates is the one we want to skip,
-            // we'll keep track of the pass number. We assume the pass *before* the last logged one 
-            // is the one where the last updates happened (in case of an early break).
-
-            // NOTE: If the history includes a flag like `item.updated === true`, this logic would be simpler.
-            // Assuming your Bellman-Ford breaks early, the last item in `stepsByPass` is the final state.
-            lastUpdatingPassK = item.step;
         }
     });
 
@@ -452,10 +414,11 @@ function renderBellmanTable(history) {
     // Determine the number of vertices (n) and the last calculated pass number (maxK)
     const n = history[history.length - 1].dist.length;
     const maxK = passKeys[passKeys.length - 1];
-    const finalDistances = stepsByPass[maxK]; // The result after the last relaxation pass
+    const finalDistances = stepsByPass[maxK];
 
     // --- 2. Create Table Header ---
     let header = '<tr><th>k</th>';
+    // Use lowercase letters (a, b, c, ...) for the table header notation λ^k(a)
     for (let i = 0; i < n; i++) {
         const label = String.fromCharCode(97 + i);
         header += `<th>&lambda;<sup>k</sup>(${label})</th>`;
@@ -471,16 +434,10 @@ function renderBellmanTable(history) {
         const k = passKeys[i];
         const currentDistances = stepsByPass[k];
 
-        // --- Skip the final (empty) pass if it was logged and we're ready for the 'fin' row ---
-        // We only want to display the final result in the (fin) row.
+        // Break if this is the final state. It will be printed by the (fin) logic below.
         if (k === maxK && k !== 0) {
-            // If k is the final logged pass, we will only show the k(fin) row below, so we skip the regular k row here.
-            // This assumes the row for k=3 in your image was the final pass state (which was blank).
-            // Since we're removing the blank row, we stop the loop here and move to the 'fin' printout.
             break;
         }
-        // --------------------------------------------------------------------------------------
-
 
         let rowLabel = k === 0 ? `0 (init)` : `${k}`;
         let tr = `<tr><td>${rowLabel}</td>`;
@@ -525,6 +482,50 @@ function renderBellmanTable(history) {
     tbody.innerHTML = bodyHTML;
 }
 
+// Start button handler
+document.getElementById('tp5-start-btn').addEventListener('click', async () => {
+    try {
+        const algo = document.getElementById('tp5-algo-select').value;
+        const bellmanmatrixValue = document.getElementById('bellmand-ford-matrix').value;
+        const rlfMatrixValue = document.getElementById('tp5-array-input').value; // Corrected ID
+
+        if (algo === 'rlf') {
+            const matrix = parseMatrix(rlfMatrixValue);
+            createGraphFromMatrix(matrix);
+            await sleep(1000);
+            updateInfo('Running Recursive Largest First (RLF)...');
+            await rlfAlgorithm(matrix);
+        }
+
+        if (algo === 'bellman') {
+            const bellmatrix = parseWeightedMatrix(bellmanmatrixValue);
+            createDirectedGraphFromWeightedMatrix(bellmatrix);
+            await sleep(1000);
+
+            const source = parseInt(document.getElementById('bf-source').value);
+            if (isNaN(source) || source < 0 || source >= bellmatrix.length) {
+                throw new Error("Invalid source node index.");
+            }
+            updateInfo(`Running Bellman-Ford from source ${indexToLabel(source)}...`);
+
+            const result = bellmanFord(bellmatrix, source);
+            const history = result.history;
+            const finalDistances = history[history.length - 1].dist;
+
+            if (result.negativeCycleDetected) {
+                updateInfo(`⚠️ **Negative Cycle Detected!** Shortest paths are undefined.`);
+            } else {
+                updateInfo(`Algorithm complete! Shortest paths from node ${indexToLabel(source)} calculated.`);
+            }
+
+            colorByDistance(finalDistances);
+            renderBellmanTable(history);
+        }
+
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+});
 
 
 // Reset button handler
@@ -532,7 +533,8 @@ document.getElementById('tp5-reset-btn').addEventListener('click', () => {
     nodes.clear();
     edges.clear();
     document.getElementById('color-legend').style.display = 'none';
-    updateInfo('Enter an adjacency matrix and click "Visualize RLF" to see the algorithm in action.');
+    document.getElementById('bf-table-container').style.display = 'none';
+    updateInfo('Algorithm visualizer ready. Choose an algorithm and enter a matrix.');
 });
 
 // Initialize on load
@@ -545,6 +547,7 @@ const rlfMatrix = document.querySelector('.rlf-matrix');
 const bellmandInfoBox = document.querySelector('#bellmand-info-box');
 const rlfInfoBox = document.querySelector('#rlf-info-box');
 
+// Initial display setup based on the default selected algorithm
 algoSelect.addEventListener('change', () => {
     if (algoSelect.value === 'bellman') {
         startBtn.textContent = 'Visualiser Bellman-Ford';
@@ -552,12 +555,15 @@ algoSelect.addEventListener('change', () => {
         rlfMatrix.style.display = 'none';
         bellmandInfoBox.style.display = 'block';
         rlfInfoBox.style.display = 'none';
-
+        document.getElementById('color-legend').style.display = 'none';
+        document.getElementById('bf-table-container').style.display = 'none';
     } else {
         startBtn.textContent = 'Visualiser RLF';
         bellmanMatrix.style.display = 'none';
         rlfMatrix.style.display = 'block';
         bellmandInfoBox.style.display = 'none';
         rlfInfoBox.style.display = 'block';
+        document.getElementById('color-legend').style.display = 'none';
+        document.getElementById('bf-table-container').style.display = 'none';
     }
 });

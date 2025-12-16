@@ -247,7 +247,11 @@ async function visualizeColorClass(vertices, colorClass, color) {
 // Display color legend
 function displayColorLegend(assignments, colors) {
     const legend = document.getElementById('color-legend');
+    if (!legend) return; // Element doesn't exist, skip legend display
+    
     const legendItems = document.getElementById('legend-items');
+    if (!legendItems) return; // Element doesn't exist, skip legend display
+    
     legendItems.innerHTML = '';
 
     assignments.forEach(assignment => {
@@ -388,7 +392,8 @@ function renderBellmanTable(history) {
 document.getElementById('tp5-reset-btn').addEventListener('click', () => {
     nodes.clear();
     edges.clear();
-    document.getElementById('color-legend').style.display = 'none';
+    const legend = document.getElementById('color-legend');
+    if (legend) legend.style.display = 'none';
     updateInfo('Enter an adjacency matrix and click "Visualize RLF" to see the algorithm in action.');
 });
 
@@ -401,20 +406,26 @@ const bellmanMatrix = document.getElementById('bellmand-ford-matrix');
 const rlfMatrix = document.querySelector('.rlf-matrix');
 const bellmandInfoBox = document.querySelector('#bellmand-info-box');
 const rlfInfoBox = document.querySelector('#rlf-info-box');
+const bfOptions = document.getElementById('bf-options');
 
 algoSelect.addEventListener('change', () => {
+    const bfTableContainer = document.getElementById('bf-table-container');
     if (algoSelect.value === 'bellman') {
         startBtn.textContent = 'Visualiser Bellman-Ford';
-        bellmanMatrix.style.display = 'block';
-        rlfMatrix.style.display = 'none';
-        bellmandInfoBox.style.display = 'block';
-        rlfInfoBox.style.display = 'none';
+        if (bellmanMatrix) bellmanMatrix.style.display = 'block';
+        if (rlfMatrix) rlfMatrix.style.display = 'none';
+        if (bellmandInfoBox) bellmandInfoBox.style.display = 'block';
+        if (rlfInfoBox) rlfInfoBox.style.display = 'none';
+        if (bfTableContainer) bfTableContainer.style.display = 'block';
+        if (bfOptions) bfOptions.style.display = 'block';
 
     } else {
         startBtn.textContent = 'Visualiser RLF';
-        bellmanMatrix.style.display = 'none';
-        rlfMatrix.style.display = 'block';
-        bellmandInfoBox.style.display = 'none';
-        rlfInfoBox.style.display = 'block';
+        if (bellmanMatrix) bellmanMatrix.style.display = 'none';
+        if (rlfMatrix) rlfMatrix.style.display = 'block';
+        if (bellmandInfoBox) bellmandInfoBox.style.display = 'none';
+        if (rlfInfoBox) rlfInfoBox.style.display = 'block';
+        if (bfTableContainer) bfTableContainer.style.display = 'none';
+        if (bfOptions) bfOptions.style.display = 'none';
     }
 });

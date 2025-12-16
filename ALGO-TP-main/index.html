@@ -67,9 +67,73 @@
                         <li><span class="team-icon">&bull;</span> Aouali Rabah - G1</li>
                         <li><span class="team-icon">&bull;</span> Menasri Ayoub - G2</li>
                     </ul>
+                    <div class="landing-bottom">
+                        Explorez les travaux pratiques en sélectionnant un TP dans le menu <span class="arrow-anim">→</span>
+                    </div>
                 </div>
-                <div class="landing-bottom">
-                    Sélectionnez un TP dans le menu pour commencer <span class="arrow-anim">→</span>
+
+                <div class="project-description">
+                    <div class="description-card">
+                        <h2>À Propos du Projet</h2>
+                        <p>
+                            Cette application interactive est une plateforme pédagogique complète dédiée à l'apprentissage des <strong>structures de données</strong> et des <strong>algorithmes</strong>. 
+                            Elle offre une visualisation en temps réel des opérations sur les structures de données, permettant aux étudiants de comprendre intuitivement le fonctionnement des algorithmes complexes.
+                        </p>
+                    </div>
+
+                    <div class="tp-description-container">
+                        <h2>Détail des Travaux Pratiques</h2>
+                        
+                        <div class="tp-description-item">
+                            <div class="tp-number">TP 1</div>
+                            <div class="tp-description-content">
+                                <h3>Arbres et Graphes Interactifs</h3>
+                                <p>Visualisation interactive des structures arborescentes (ABR, AVL) et graphes. Permet d'insérer des nœuds, visualiser l'équilibrage automatique des arbres AVL, et explorer les propriétés géométriques des structures.</p>
+                            </div>
+                        </div>
+
+                        <div class="tp-description-item">
+                            <div class="tp-number">TP 2</div>
+                            <div class="tp-description-content">
+                                <h3>Recherche et Suppression dans les Arbres</h3>
+                                <p>Opérations de recherche et suppression de nœuds dans les arbres binaires de recherche et AVL. Visualisation étape par étape des processus de recherche, suppression et réorganisation de l'arbre.</p>
+                            </div>
+                        </div>
+
+                        <div class="tp-description-item">
+                            <div class="tp-number">TP 3</div>
+                            <div class="tp-description-content">
+                                <h3>Arbres Rouge et Noir</h3>
+                                <p>Étude approfondie des arbres rouge et noir avec insertion, recherche et suppression. Visualisation des propriétés d'équilibre et des rotations effectuées pour maintenir l'invariant de coloration.</p>
+                            </div>
+                        </div>
+
+                        <div class="tp-description-item">
+                            <div class="tp-number">TP 4</div>
+                            <div class="tp-description-content">
+                                <h3>Visualiseur QuickSort</h3>
+                                <p>Animation complète de l'algorithme de tri QuickSort avec différentes stratégies de pivot. Montre la décomposition récursive du problème et l'impact du choix du pivot sur la performance.</p>
+                            </div>
+                        </div>
+
+                        <div class="tp-description-item">
+                            <div class="tp-number">TP 5</div>
+                            <div class="tp-description-content">
+                                <h3>Recursive Largest First & Bellman-Ford</h3>
+                                <p>Deux algorithmes essentiels : RLF pour la coloration de graphes et Bellman-Ford pour le calcul des plus courts chemins. Inclut la détection des cycles de poids négatif.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="project-benefits">
+                        <h2>Objectifs Pédagogiques</h2>
+                        <ul class="benefits-list">
+                            <li><strong>Visualisation Interactive :</strong> Comprendre les structures de données en les voyant en action</li>
+                            <li><strong>Apprentissage Pratique :</strong> Manipuler directement les structures et observer les résultats</li>
+                            <li><strong>Analyse d'Algorithmes :</strong> Observer les étapes d'exécution en détail</li>
+                            <li><strong>Exploration Libre :</strong> Expérimenter avec différentes entrées pour approfondir la compréhension</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -349,7 +413,7 @@
             </div>
         </div>
         <div id="tp5-content" class="tp-content">
-            <h1 class="tp5-title">TP5 – Recursive Largest First</h1>
+            <h1 class="tp5-title">TP5 – Recursive Largest First & Bellman-Ford</h1>
             <div class="tp5-layout" style="display:flex;gap:20px;align-items:flex-start;">
                 <div class="tp5-left" style="flex:0 0 360px;">
 
@@ -362,7 +426,7 @@
                         <option value="rlf">Recursive Largest First (RLF)</option>
                         <option value="bellman">Bellman-Ford</option>
                     </select>
-                    <div id="bf-options" style="margin-top:10px;">
+                    <div id="bf-options" style="margin-top:10px; display: none;">
                         <label>Sommet source :</label>
                         <input type="number" id="bf-source" value=""
                             style="width:100%;padding:6px;border-radius:8px;border:1px solid #e5e7eb;">

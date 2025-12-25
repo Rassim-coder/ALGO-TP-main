@@ -42,7 +42,7 @@ class RedBlackTreeTP3 {
    */
   insert(value) {
     this.animationSteps = []; // Reset animation steps
-    
+
     // Step 1: Create new node
     const newNode = new RBNode(value); // Changed from Node to RBNode
     this.animationSteps.push({
@@ -123,7 +123,7 @@ class RedBlackTreeTP3 {
   fixInsert(node) {
     // While parent is red (violation of RB property)
     while (node.parent.color === RED) {
-      
+
       // Case A: Parent is LEFT child of grandparent
       if (node.parent === node.parent.parent.left) {
         const uncle = node.parent.parent.right; // Uncle is right child
@@ -179,7 +179,7 @@ class RedBlackTreeTP3 {
 
           this.rightRotate(node.parent.parent);
         }
-      } 
+      }
       // Case B: Parent is RIGHT child of grandparent (mirror of Case A)
       else {
         const uncle = node.parent.parent.left; // Uncle is left child
@@ -510,11 +510,11 @@ class TreeVisualizerTP3 {
     this.container = document.getElementById(containerId);
     this.tree = tree;
     this.network = null;
-    
+
     // vis.js data sets for nodes and edges
     this.nodes = new vis.DataSet([]);
     this.edges = new vis.DataSet([]);
-    
+
     // Initialize the network
     this.initNetwork();
   }
@@ -581,7 +581,7 @@ class TreeVisualizerTP3 {
 
     // Create the network
     this.network = new vis.Network(this.container, data, options);
-    
+
     // Add event listeners
     this.addEventListeners();
   }
@@ -621,7 +621,7 @@ class TreeVisualizerTP3 {
 
     // If tree is empty, just return
     if (this.tree.root === NIL || this.tree.root === null) { // Fixed the undefined 'node' reference
-        return;
+      return;
     }
 
     // Calculate x-positions using in-order traversal
@@ -634,12 +634,12 @@ class TreeVisualizerTP3 {
 
     // Fit the network to show all nodes
     setTimeout(() => {
-        this.network.fit({
-            animation: {
-                duration: 300,
-                easingFunction: 'easeInOutQuad'
-            }
-        });
+      this.network.fit({
+        animation: {
+          duration: 300,
+          easingFunction: 'easeInOutQuad'
+        }
+      });
     }, 100);
   }
 
@@ -652,13 +652,13 @@ class TreeVisualizerTP3 {
     if (node === NIL) {
       return;
     }
-    
+
     // Traverse left subtree
     this._calculatePositions(node.left);
-    
+
     // Assign x-position to current node
     node.xPos = this.xCounter++;
-    
+
     // Traverse right subtree
     this._calculatePositions(node.right);
   }
@@ -877,3 +877,18 @@ class TreeVisualizerTP3 {
     return this.network;
   }
 }
+
+
+
+
+document.getElementById('tp3-gen-btn').addEventListener('click', function () {
+  // A good sequence for demonstrating Red-Black Tree insertions and balancing
+  const defaultValues = "10, 20, 30, 15, 5, 25";
+  const inputArea = document.getElementById('tp3-bulk-values');
+
+  // Set the value of the bulk input field
+  inputArea.value = defaultValues;
+
+  // Optional: Clear the single node value input
+  document.getElementById('tp3-node-value').value = '';
+});

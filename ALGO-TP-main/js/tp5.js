@@ -571,3 +571,33 @@ algoSelect.addEventListener('change', () => {
         document.getElementById('color-legend').style.display = 'none';
     }
 });
+
+document.getElementById('tp5-gen-btn').addEventListener('click', function () {
+    const algoSelect = document.getElementById('tp5-algo-select').value;
+
+    // Matrix specifically for RLF
+    const rlfMatrix =
+        `0,1,0,0,1
+1,0,1,0,0
+0,1,0,1,1
+0,0,1,0,1
+1,0,1,1,0`;
+
+    // Optional: A matrix for Bellman-Ford (Weighted/Oriented)
+    const bellmanMatrix =
+        `0,3,0,0,5
+0,0,6,0,2
+0,0,0,2,0
+3,0,7,0,0
+0,1,4,6,0`;
+
+    if (algoSelect === 'rlf') {
+        const input = document.getElementById('tp5-array-input');
+        input.value = rlfMatrix;
+        // Optional: Trigger a visual update if you want it instant
+        // updateGraphFromMatrix(rlfMatrix); 
+    } else if (algoSelect === 'bellman') {
+        const input = document.getElementById('bellmand-ford-matrix');
+        input.value = bellmanMatrix;
+    }
+});
